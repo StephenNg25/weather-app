@@ -201,10 +201,71 @@ const loading = mutation.isPending;
         )}
 
         {data && (
-          <pre className="mt-6 overflow-auto rounded-lg border p-4 text-sm">
-            {JSON.stringify(data, null, 2)}
-          </pre>
+          <section className="mt-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin size={14} /> {data.location}
+                </div>
+
+                <div className="mt-2 flex items-center gap-4">
+                  {iconFor(data.current.code, data.current.isDay, 64)}
+                  <div>
+                    <div className="text-5xl font-bold">
+                      {Math.round(data.current.temp)}°F
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {WMO[data.current.code] ?? "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-2">
+                <Stat
+                  icon={<Thermometer size={16} />}
+                  label="Feels like"
+                  value={`${Math.round(data.current.feels)}°F`}
+                />
+                <Stat
+                  icon={<Droplets size={16} />}
+                  label="Humidity"
+                  value={`${data.current.humidity}%`}
+                />
+                <Stat
+                  icon={<Wind size={16} />}
+                  label="Wind"
+                  value={`${Math.round(data.current.wind)} mph`}
+                />
+                <Stat
+                  icon={<Gauge size={16} />}
+                  label="Pressure"
+                  value={`${Math.round(data.current.pressure)} hPa`}
+                />
+              </div>
+            </div>
+          </section>
         )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+      <span className="text-muted-foreground">{icon}</span>
+      <div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="font-medium">{value}</div>
       </div>
     </div>
   );
