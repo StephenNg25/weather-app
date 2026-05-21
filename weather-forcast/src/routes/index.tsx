@@ -152,7 +152,42 @@ function WeatherPage() {
     onSuccess: (d) => setData(d),
   });
 
-const loading = mutation.isPending;
+  const geoMutation = useMutation({
+    mutationFn: async () => {
+      if (!("geolocation" in navigator)) {
+        throw new Error("Geolocation is not supported by your browser.");
+      }
+  
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          (err) => {
+            if (err.code === err.PERMISSION_DENIED) {
+              reject(new Error("Location permission denied."));
+            } else if (err.code === err.POSITION_UNAVAILABLE) {
+              reject(new Error("Your location is unavailable."));
+            } else if (err.code === err.TIMEOUT) {
+              reject(new Error("Location request timed out."));
+            } else {
+              reject(new Error("Could not get your location."));
+            }
+          },
+          { timeout: 10000 }
+        );
+      });
+  
+      const label = await reverseGeocode(
+        pos.coords.latitude,
+        pos.coords.longitude
+      );
+  
+      return fetchWeather(pos.coords.latitude, pos.coords.longitude, label);
+    },
+    onSuccess: (d) => setData(d),
+  });
+
+  const error = mutation.error || geoMutation.error;
+  const loading = mutation.isPending || geoMutation.isPending;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -196,22 +231,28 @@ const loading = mutation.isPending;
 
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+            onClick={() => geoMutation.mutate()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
           >
-            <MapPin size={16} />
+            {geoMutation.isPending ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              <MapPin size={16} />
+            )}
             Use my location
           </button>
         </form>
-        {mutation.error && (
+        {error && (
           <div
             role="alert"
             className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
           >
-            {(mutation.error as Error).message}
+            {(error as Error).message}
           </div>
         )}
 
-        {!data && !mutation.error && !loading && (
+        {!data && !error && !loading && (
           <div className="mt-10 rounded-lg border border-dashed p-10 text-center text-muted-foreground">
             Enter a location above to see the current weather and 5-day forecast.
           </div>
