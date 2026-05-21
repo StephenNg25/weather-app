@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { 
+  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, CloudFog, 
+  CloudDrizzle, Wind, Droplets, Gauge, Thermometer, Loader2, MapPin, Search 
+} from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   component: WeatherPage,
@@ -26,6 +30,20 @@ const WMO: Record<number, string> = {
   85: "Slight snow showers", 86: "Heavy snow showers",
   95: "Thunderstorm", 96: "Thunderstorm w/ slight hail", 99: "Thunderstorm w/ heavy hail",
 };
+
+function iconFor(code: number, isDay = 1, size = 48) {
+  const cls = "text-primary";
+  const p = { size, className: cls };
+  if (code === 0 || code === 1) return <Sun {...p} />;
+  if (code === 2) return <Cloud {...p} />;
+  if (code === 3) return <Cloud {...p} />;
+  if (code === 45 || code === 48) return <CloudFog {...p} />;
+  if (code >= 51 && code <= 57) return <CloudDrizzle {...p} />;
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return <CloudRain {...p} />;
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return <CloudSnow {...p} />;
+  if (code >= 95) return <CloudLightning {...p} />;
+  return <Cloud {...p} />;
+}
 
 
 function WeatherPage() {
