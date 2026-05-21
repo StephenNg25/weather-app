@@ -58,15 +58,31 @@ async function geocode(query: string): Promise<GeoResult> {
   }
 
   // Otherwise, e.g "Toronto"
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Geocoding service unavailable. Try again later.");
-  const json = await res.json();
-  if (!json.results || json.results.length === 0) {
-    throw new Error(`No results found for "${query}". Try a city, zip code, or "lat,lon".`);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`;
+  
+  const res = await fetch(url, {
+    headers: {"Accept": "application/json",},
+  });
+  
+  if (!res.ok) {
+    throw new Error("Location search is unavailable. Try again later.");
   }
-  const r = json.results[0];
-  return { name: r.name, latitude: r.latitude, longitude: r.longitude, country: r.country, admin1: r.admin1 };
+  
+  const json = await res.json();
+  
+  if (!json || json.length === 0) {
+    throw new Error(`No results found for "${query}". Try a city, postal code, landmark, or "lat,lon".`);
+  }
+  
+  const r = json[0];
+  
+  return {
+    name: r.display_name,
+    latitude: parseFloat(r.lat),
+    longitude: parseFloat(r.lon),
+    country: r.address?.country,
+    admin1: r.address?.state || r.address?.province || r.address?.region,
+  };
 }
 
 async function fetchWeather(
@@ -358,7 +374,7 @@ function WeatherPage() {
             </section>
             
             <p className="mt-6 text-xs text-muted-foreground">
-              Data from Open-Meteo. No API key required.
+              Data from OpenStreetMap. No API key required.
             </p>
           </>
         )}
