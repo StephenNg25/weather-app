@@ -356,6 +356,10 @@ function WeatherPage() {
                 })}
               </div>
             </section>
+            
+            <p className="mt-6 text-xs text-muted-foreground">
+              Data from Open-Meteo. No API key required.
+            </p>
           </>
         )}
       </div>
