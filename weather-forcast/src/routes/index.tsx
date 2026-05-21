@@ -114,6 +114,23 @@ async function fetchWeather(
   };
 }
 
+async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en&format=json`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const r = json?.results?.[0];
+
+    if (r) {
+      return [r.name, r.admin1, r.country].filter(Boolean).join(", ");
+    }
+  } catch {
+    // Fall back to coordinates if reverse geocoding fails.
+  }
+
+  return `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+}
+
 function WeatherPage() {
   const [query, setQuery] = useState("");
   const [data, setData] = useState<WeatherData | null>(null);
@@ -246,7 +263,7 @@ const loading = mutation.isPending;
                 </div>
               </div>
             </section>
-            
+
             {/* Extra: 5-day forecast section */}
             <section className="mt-6">
               <h2 className="mb-3 text-lg font-semibold">5-Day Forecast</h2>
