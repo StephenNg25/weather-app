@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { 
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning, CloudFog, 
@@ -115,6 +116,26 @@ async function fetchWeather(
 
 function WeatherPage() {
   const [query, setQuery] = useState("");
+  const [data, setData] = useState<WeatherData | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async (q: string) => {
+      if (!q.trim()) {
+        throw new Error("Please enter a location.");
+      }
+
+      const geo = await geocode(q);
+
+      const label = [geo.name, geo.admin1, geo.country]
+        .filter(Boolean)
+        .join(", ");
+
+      return fetchWeather(geo.latitude, geo.longitude, label);
+    },
+    onSuccess: (d) => setData(d),
+  });
+
+const loading = mutation.isPending;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -129,7 +150,7 @@ function WeatherPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            console.log(query);
+            mutation.mutate(query);
           }}
           className="flex flex-col gap-2 sm:flex-row"
         >
@@ -149,9 +170,10 @@ function WeatherPage() {
 
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            <Search size={16} />
+            {mutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
             Search
           </button>
 
@@ -163,6 +185,26 @@ function WeatherPage() {
             Use my location
           </button>
         </form>
+        {mutation.error && (
+          <div
+            role="alert"
+            className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+          >
+            {(mutation.error as Error).message}
+          </div>
+        )}
+
+        {!data && !mutation.error && !loading && (
+          <div className="mt-10 rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+            Enter a location above to see the current weather and 5-day forecast.
+          </div>
+        )}
+
+        {data && (
+          <pre className="mt-6 overflow-auto rounded-lg border p-4 text-sm">
+            {JSON.stringify(data, null, 2)}
+          </pre>
+        )}
       </div>
     </div>
   );
