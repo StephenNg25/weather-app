@@ -201,50 +201,104 @@ const loading = mutation.isPending;
         )}
 
         {data && (
-          <section className="mt-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin size={14} /> {data.location}
-                </div>
+          <>
+            <section className="mt-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin size={14} /> {data.location}
+                  </div>
 
-                <div className="mt-2 flex items-center gap-4">
-                  {iconFor(data.current.code, data.current.isDay, 64)}
-                  <div>
-                    <div className="text-5xl font-bold">
-                      {Math.round(data.current.temp)}°F
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {WMO[data.current.code] ?? "—"}
+                  <div className="mt-2 flex items-center gap-4">
+                    {iconFor(data.current.code, data.current.isDay, 64)}
+                    <div>
+                      <div className="text-5xl font-bold">
+                        {Math.round(data.current.temp)}°F
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {WMO[data.current.code] ?? "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-2">
-                <Stat
-                  icon={<Thermometer size={16} />}
-                  label="Feels like"
-                  value={`${Math.round(data.current.feels)}°F`}
-                />
-                <Stat
-                  icon={<Droplets size={16} />}
-                  label="Humidity"
-                  value={`${data.current.humidity}%`}
-                />
-                <Stat
-                  icon={<Wind size={16} />}
-                  label="Wind"
-                  value={`${Math.round(data.current.wind)} mph`}
-                />
-                <Stat
-                  icon={<Gauge size={16} />}
-                  label="Pressure"
-                  value={`${Math.round(data.current.pressure)} hPa`}
-                />
+                <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-2">
+                  <Stat
+                    icon={<Thermometer size={16} />}
+                    label="Feels like"
+                    value={`${Math.round(data.current.feels)}°F`}
+                  />
+                  <Stat
+                    icon={<Droplets size={16} />}
+                    label="Humidity"
+                    value={`${data.current.humidity}%`}
+                  />
+                  <Stat
+                    icon={<Wind size={16} />}
+                    label="Wind"
+                    value={`${Math.round(data.current.wind)} mph`}
+                  />
+                  <Stat
+                    icon={<Gauge size={16} />}
+                    label="Pressure"
+                    value={`${Math.round(data.current.pressure)} hPa`}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+            
+            {/* Extra: 5-day forecast section */}
+            <section className="mt-6">
+              <h2 className="mb-3 text-lg font-semibold">5-Day Forecast</h2>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                {data.daily.map((d) => {
+                  const date = new Date(d.date + "T00:00:00");
+                  const day = date.toLocaleDateString(undefined, { weekday: "short" });
+                  const md = date.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  });
+
+                  return (
+                    <div
+                      key={d.date}
+                      className="rounded-lg border bg-card p-4 text-card-foreground"
+                    >
+                      <div className="text-sm font-medium">{day}</div>
+                      <div className="text-xs text-muted-foreground">{md}</div>
+
+                      <div className="my-3 flex justify-center">
+                        {iconFor(d.code, 1, 36)}
+                      </div>
+
+                      <div className="text-center text-sm">
+                        <span className="font-semibold">{Math.round(d.tMax)}°</span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          / {Math.round(d.tMin)}°
+                        </span>
+                      </div>
+
+                      <div className="mt-2 text-center text-xs text-muted-foreground">
+                        {WMO[d.code] ?? "—"}
+                      </div>
+
+                      <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                        <span title="Precipitation">
+                          <Droplets size={12} className="inline" />{" "}
+                          {d.precip.toFixed(1)}"
+                        </span>
+                        <span title="Max wind">
+                          <Wind size={12} className="inline" /> {Math.round(d.windMax)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </>
         )}
       </div>
     </div>
