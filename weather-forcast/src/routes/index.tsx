@@ -68,6 +68,50 @@ async function geocode(query: string): Promise<GeoResult> {
   return { name: r.name, latitude: r.latitude, longitude: r.longitude, country: r.country, admin1: r.admin1 };
 }
 
+async function fetchWeather(
+  lat: number,
+  lon: number,
+  label: string
+): Promise<WeatherData> {
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,pressure_msl,wind_speed_10m` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max` +
+    `&timezone=auto&forecast_days=5&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error("Weather service is unavailable. Please try again.");
+  }
+
+  const j = await res.json();
+
+  if (!j.current || !j.daily) {
+    throw new Error("Received malformed weather data.");
+  }
+
+  return {
+    location: label,
+    current: {
+      temp: j.current.temperature_2m,
+      feels: j.current.apparent_temperature,
+      humidity: j.current.relative_humidity_2m,
+      wind: j.current.wind_speed_10m,
+      pressure: j.current.pressure_msl,
+      code: j.current.weather_code,
+      isDay: j.current.is_day,
+    },
+    daily: j.daily.time.map((date: string, i: number) => ({
+      date,
+      tMax: j.daily.temperature_2m_max[i],
+      tMin: j.daily.temperature_2m_min[i],
+      code: j.daily.weather_code[i],
+      precip: j.daily.precipitation_sum[i],
+      windMax: j.daily.wind_speed_10m_max[i],
+    })),
+  };
+}
 
 function WeatherPage() {
   const [query, setQuery] = useState("");
