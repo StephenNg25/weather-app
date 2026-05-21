@@ -147,9 +147,21 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
   return `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
 }
 
+function fahrenheitToCelsius(f: number) {
+  return ((f - 32) * 5) / 9;
+}
+
 function WeatherPage() {
   const [query, setQuery] = useState("");
   const [data, setData] = useState<WeatherData | null>(null);
+  const [unit, setUnit] = useState<"F" | "C">("F");
+
+  const formatTemp = (tempF: number) => {
+    const value = unit === "F" ? tempF : fahrenheitToCelsius(tempF);
+    return Math.round(value);
+  };
+  
+  const inactiveUnit = unit === "F" ? "C" : "F";
 
   const mutation = useMutation({
     mutationFn: async (q: string) => {
@@ -277,17 +289,31 @@ function WeatherPage() {
         {data && (
           <>
             <section className="mt-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin size={14} /> {data.location}
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin size={14} className="mt-1 shrink-0" />
+                    <span className="line-clamp-2 break-words">
+                      {data.location}
+                    </span>
                   </div>
 
                   <div className="mt-2 flex items-center gap-4">
                     {iconFor(data.current.code, data.current.isDay, 64)}
                     <div>
-                      <div className="text-5xl font-bold">
-                        {Math.round(data.current.temp)}°F
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-bold">
+                          {formatTemp(data.current.temp)}°{unit}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => setUnit(inactiveUnit)}
+                          className="text-2xl font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                          aria-label={`Switch to ${inactiveUnit}`}
+                        >
+                          / °{inactiveUnit}
+                        </button>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {WMO[data.current.code] ?? "—"}
@@ -300,7 +326,7 @@ function WeatherPage() {
                   <Stat
                     icon={<Thermometer size={16} />}
                     label="Feels like"
-                    value={`${Math.round(data.current.feels)}°F`}
+                    value={`${formatTemp(data.current.feels)}°${unit}`}
                   />
                   <Stat
                     icon={<Droplets size={16} />}
@@ -347,11 +373,8 @@ function WeatherPage() {
                       </div>
 
                       <div className="text-center text-sm">
-                        <span className="font-semibold">{Math.round(d.tMax)}°</span>
-                        <span className="text-muted-foreground">
-                          {" "}
-                          / {Math.round(d.tMin)}°
-                        </span>
+                        <span className="font-semibold">{formatTemp(d.tMax)}°</span>
+                        <span className="text-muted-foreground"> / {formatTemp(d.tMin)}°</span>
                       </div>
 
                       <div className="mt-2 text-center text-xs text-muted-foreground">
