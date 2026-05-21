@@ -45,6 +45,29 @@ function iconFor(code: number, isDay = 1, size = 48) {
   return <Cloud {...p} />;
 }
 
+async function geocode(query: string): Promise<GeoResult> {
+  // Coords check: "lat,lon"
+  const coordMatch = query.trim().match(/^(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)$/);
+  if (coordMatch) {
+    const lat = parseFloat(coordMatch[1]);
+    const lon = parseFloat(coordMatch[2]);
+    if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+      return { name: `${lat.toFixed(3)}, ${lon.toFixed(3)}`, latitude: lat, longitude: lon };
+    }
+  }
+
+  // Otherwise, e.g "Toronto"
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Geocoding service unavailable. Try again later.");
+  const json = await res.json();
+  if (!json.results || json.results.length === 0) {
+    throw new Error(`No results found for "${query}". Try a city, zip code, or "lat,lon".`);
+  }
+  const r = json.results[0];
+  return { name: r.name, latitude: r.latitude, longitude: r.longitude, country: r.country, admin1: r.admin1 };
+}
+
 
 function WeatherPage() {
   const [query, setQuery] = useState("");
