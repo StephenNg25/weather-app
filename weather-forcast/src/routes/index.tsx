@@ -535,9 +535,71 @@ function WeatherPage() {
 }
 
 function SavedQueries() {
+  const { data: rows = [], isLoading, error } = useQuery({
+    queryKey: ["weather_queries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("weather_queries")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return (data ?? []) as unknown as SavedQuery[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+        Loading saved queries...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+        {(error as Error).message}
+      </div>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+        No saved queries yet.
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-      Saved query CRUD UI will appear here.
+    <div className="space-y-3">
+      {rows.map((row) => (
+        <div key={row.id} className="rounded-lg border bg-card p-4 text-card-foreground">
+          <div className="flex items-center gap-2 font-semibold">
+            <MapPin size={14} />
+            {row.resolved_name}
+          </div>
+
+          <div className="mt-1 text-xs text-muted-foreground">
+            Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
+            {row.longitude.toFixed(3)}
+          </div>
+
+          <div className="mt-2 text-sm">
+            {row.start_date} to {row.end_date} · {row.temperatures.length} day(s)
+          </div>
+
+          {row.notes && (
+            <div className="mt-1 text-sm italic text-muted-foreground">
+              "{row.notes}"
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
