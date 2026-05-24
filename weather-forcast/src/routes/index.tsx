@@ -550,6 +550,7 @@ function SavedQueries() {
       return (data ?? []) as unknown as SavedQuery[];
     },
   });
+  const [showForm, setShowForm] = useState(false);
 
   if (isLoading) {
     return (
@@ -574,58 +575,173 @@ function SavedQueries() {
       </div>
     );
   }
+  return (
+    <div>
+      <div className="mb-4">
+        <button
+          onClick={() => setShowForm(true)}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+        >
+          <Save size={14} />
+          New query
+        </button>
+      </div>
+  
+      {showForm && (
+        <QueryForm
+          initial={null}
+          onClose={() => setShowForm(false)}
+          onSaved={() => setShowForm(false)}
+        />
+      )}
+  
+      {rows.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+          No saved queries yet.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((row) => (
+            <div key={row.id} className="rounded-lg border bg-card p-4 text-card-foreground">
+              <div className="flex items-center gap-2 font-semibold">
+                <MapPin size={14} />
+                {row.resolved_name}
+              </div>
+
+              <div className="mt-1 text-xs text-muted-foreground">
+                Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
+                {row.longitude.toFixed(3)}
+              </div>
+
+              <div className="mt-2 text-sm">
+                {row.start_date} to {row.end_date} · {row.temperatures.length} day(s)
+              </div>
+
+              {row.notes && (
+                <div className="mt-1 text-sm italic text-muted-foreground">
+                  "{row.notes}"
+                </div>
+              )}
+
+              {row.temperatures.length > 0 && (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full min-w-[400px] text-xs">
+                    <thead>
+                      <tr className="text-left text-muted-foreground">
+                        <th className="py-1 pr-3">Date</th>
+                        <th className="py-1 pr-3">Min °F</th>
+                        <th className="py-1 pr-3">Max °F</th>
+                        <th className="py-1 pr-3">Mean °F</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {row.temperatures.map((temp) => (
+                        <tr key={temp.date} className="border-t">
+                          <td className="py-1 pr-3">{temp.date}</td>
+                          <td className="py-1 pr-3">{temp.tMin ?? "—"}</td>
+                          <td className="py-1 pr-3">{temp.tMax ?? "—"}</td>
+                          <td className="py-1 pr-3">{temp.tMean ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QueryForm({
+  initial,
+  onClose,
+  onSaved,
+}: {
+  initial: SavedQuery | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const in7Days = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
+  const [location, setLocation] = useState(initial?.location_query ?? "");
+  const [start, setStart] = useState(initial?.start_date ?? today);
+  const [end, setEnd] = useState(initial?.end_date ?? in7Days);
+  const [notes, setNotes] = useState(initial?.notes ?? "");
 
   return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div key={row.id} className="rounded-lg border bg-card p-4 text-card-foreground">
-          <div className="flex items-center gap-2 font-semibold">
-            <MapPin size={14} />
-            {row.resolved_name}
-          </div>
+    <div className="mb-4 rounded-lg border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold">New weather query</h3>
 
-          <div className="mt-1 text-xs text-muted-foreground">
-            Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
-            {row.longitude.toFixed(3)}
-          </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <X size={16} />
+        </button>
+      </div>
 
-          <div className="mt-2 text-sm">
-            {row.start_date} to {row.end_date} · {row.temperatures.length} day(s)
-          </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block sm:col-span-2">
+          <span className="text-xs text-muted-foreground">
+            Location
+          </span>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder='e.g. "Tokyo", "94103", "CN Tower", or "43.65,-79.38"'
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
 
-          {row.notes && (
-            <div className="mt-1 text-sm italic text-muted-foreground">
-              "{row.notes}"
-            </div>
-          )}
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Start date</span>
+          <input
+            type="date"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
 
-          {row.temperatures.length > 0 && (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[400px] text-xs">
-                <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th className="py-1 pr-3">Date</th>
-                    <th className="py-1 pr-3">Min °F</th>
-                    <th className="py-1 pr-3">Max °F</th>
-                    <th className="py-1 pr-3">Mean °F</th>
-                  </tr>
-                </thead>
+        <label className="block">
+          <span className="text-xs text-muted-foreground">End date</span>
+          <input
+            type="date"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
 
-                <tbody>
-                  {row.temperatures.map((temp) => (
-                    <tr key={temp.date} className="border-t">
-                      <td className="py-1 pr-3">{temp.date}</td>
-                      <td className="py-1 pr-3">{temp.tMin ?? "—"}</td>
-                      <td className="py-1 pr-3">{temp.tMax ?? "—"}</td>
-                      <td className="py-1 pr-3">{temp.tMean ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      ))}
+        <label className="block sm:col-span-2">
+          <span className="text-xs text-muted-foreground">Notes</span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+
+      <div className="mt-3 flex justify-end gap-2">
+        <button
+          onClick={onClose}
+          className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={onSaved}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+        >
+          Save
+        </button>
+      </div>
     </div>
   );
 }
