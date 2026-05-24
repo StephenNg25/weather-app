@@ -584,6 +584,7 @@ function SavedQueries() {
   });
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
+  const [editing, setEditing] = useState<SavedQuery | null>(null);
 
   const refreshSavedQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["weather_queries"] });
@@ -601,7 +602,7 @@ function SavedQueries() {
     },
     onSuccess: refreshSavedQueries,
   });
-  
+
   if (isLoading) {
     return (
       <div className="rounded-lg border p-6 text-sm text-muted-foreground">
@@ -622,7 +623,10 @@ function SavedQueries() {
     <div>
       <div className="mb-4">
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm(true);
+          }}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
         >
           <Save size={14} />
@@ -632,10 +636,14 @@ function SavedQueries() {
   
       {showForm && (
         <QueryForm
-          initial={null}
-          onClose={() => setShowForm(false)}
+          initial={editing}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
           onSaved={() => {
             setShowForm(false);
+            setEditing(null);
             refreshSavedQueries();
           }}
         />
@@ -704,6 +712,16 @@ function SavedQueries() {
               >
                 <Trash2 size={12} />
                 Delete
+              </button>
+              <button
+                onClick={() => {
+                  setEditing(row);
+                  setShowForm(true);
+                }}
+                className="mt-3 mr-2 inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+              >
+                <Pencil size={12} />
+                Edit
               </button>
             </div>
           ))}
