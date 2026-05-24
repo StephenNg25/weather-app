@@ -516,9 +516,28 @@ function WeatherPage() {
             <p className="mt-6 text-xs text-muted-foreground">
               Data from OpenStreetMap. No API key required.
             </p>
+
+            <section className="mt-10 border-t pt-8">
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold">Saved Weather Queries</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Save location and date range searches, then manage them with CRUD actions.
+                </p>
+              </div>
+
+              <SavedQueries />
+            </section>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function SavedQueries() {
+  return (
+    <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+      Saved query CRUD UI will appear here.
     </div>
   );
 }
