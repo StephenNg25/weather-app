@@ -210,6 +210,7 @@ function WeatherPage() {
   const [query, setQuery] = useState("");
   const [data, setData] = useState<WeatherData | null>(null);
   const [unit, setUnit] = useState<"F" | "C">("F");
+  const [activeSection, setActiveSection] = useState<"current" | "saved">("current");
 
   const formatTemp = (tempF: number) => {
     const value = unit === "F" ? tempF : fahrenheitToCelsius(tempF);
@@ -344,190 +345,222 @@ function WeatherPage() {
           </p>
         </header>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            mutation.mutate(query);
-          }}
-          className="flex flex-col gap-2 sm:flex-row"
-        >
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={18}
-            />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder='e.g. "Paris", "10001", "Eiffel Tower", "40.71,-74.01"'
-              className="w-full rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
+        <div className="mb-8 inline-flex rounded-lg border bg-background p-1">
           <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            type="button"
+            onClick={() => setActiveSection("current")}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+              activeSection === "current"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            {mutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
-            Search
+            Current Weather
           </button>
 
           <button
             type="button"
-            onClick={() => geoMutation.mutate()}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+            onClick={() => setActiveSection("saved")}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+              activeSection === "saved"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            {geoMutation.isPending ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <MapPin size={16} />
-            )}
-            Use my location
+            Saved Queries
           </button>
-        </form>
-        {error && (
-          <div
-            role="alert"
-            className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        </div>
+
+        {activeSection === "current" && (
+         <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              mutation.mutate(query);
+            }}
+            className="flex flex-col gap-2 sm:flex-row"
           >
-            {(error as Error).message}
-          </div>
-        )}
+            <div className="relative flex-1">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                size={18}
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder='e.g. "Paris", "10001", "Eiffel Tower", "40.71,-74.01"'
+                className="w-full rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
 
-        {!data && !error && !loading && (
-          <div className="mt-10 rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-            Enter a location above to see the current weather and 5-day forecast.
-          </div>
-        )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {mutation.isPending ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
+              Search
+            </button>
 
-        {data && (
-          <>
-            <section className="mt-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <MapPin size={14} className="mt-1 shrink-0" />
-                    <span className="line-clamp-2 break-words">
-                      {data.location}
-                    </span>
-                  </div>
+            <button
+              type="button"
+              onClick={() => geoMutation.mutate()}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+            >
+              {geoMutation.isPending ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <MapPin size={16} />
+              )}
+              Use my location
+            </button>
+          </form>
+          {error && (
+            <div
+              role="alert"
+              className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              {(error as Error).message}
+            </div>
+          )}
 
-                  <div className="mt-2 flex items-center gap-4">
-                    {iconFor(data.current.code, data.current.isDay, 64)}
-                    <div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold">
-                          {formatTemp(data.current.temp)}°{unit}
-                        </span>
+          {!data && !error && !loading && (
+            <div className="mt-10 rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+              Enter a location above to see the current weather and 5-day forecast.
+            </div>
+          )}
 
-                        <button
-                          type="button"
-                          onClick={() => setUnit(inactiveUnit)}
-                          className="text-2xl font-semibold text-muted-foreground transition-colors hover:text-foreground"
-                          aria-label={`Switch to ${inactiveUnit}`}
-                        >
-                          / °{inactiveUnit}
-                        </button>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {WMO[data.current.code] ?? "—"}
+          {data && (
+            <>
+              <section className="mt-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <MapPin size={14} className="mt-1 shrink-0" />
+                      <span className="line-clamp-2 break-words">
+                        {data.location}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-4">
+                      {iconFor(data.current.code, data.current.isDay, 64)}
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-5xl font-bold">
+                            {formatTemp(data.current.temp)}°{unit}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => setUnit(inactiveUnit)}
+                            className="text-2xl font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                            aria-label={`Switch to ${inactiveUnit}`}
+                          >
+                            / °{inactiveUnit}
+                          </button>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {WMO[data.current.code] ?? "—"}
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-2">
+                    <Stat
+                      icon={<Thermometer size={16} />}
+                      label="Feels like"
+                      value={`${formatTemp(data.current.feels)}°${unit}`}
+                    />
+                    <Stat
+                      icon={<Droplets size={16} />}
+                      label="Humidity"
+                      value={`${data.current.humidity}%`}
+                    />
+                    <Stat
+                      icon={<Wind size={16} />}
+                      label="Wind"
+                      value={`${Math.round(data.current.wind)} mph`}
+                    />
+                    <Stat
+                      icon={<Gauge size={16} />}
+                      label="Pressure"
+                      value={`${Math.round(data.current.pressure)} hPa`}
+                    />
+                  </div>
                 </div>
+              </section>
 
-                <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-2">
-                  <Stat
-                    icon={<Thermometer size={16} />}
-                    label="Feels like"
-                    value={`${formatTemp(data.current.feels)}°${unit}`}
-                  />
-                  <Stat
-                    icon={<Droplets size={16} />}
-                    label="Humidity"
-                    value={`${data.current.humidity}%`}
-                  />
-                  <Stat
-                    icon={<Wind size={16} />}
-                    label="Wind"
-                    value={`${Math.round(data.current.wind)} mph`}
-                  />
-                  <Stat
-                    icon={<Gauge size={16} />}
-                    label="Pressure"
-                    value={`${Math.round(data.current.pressure)} hPa`}
-                  />
+              {/* Extra: 5-day forecast section */}
+              <section className="mt-6">
+                <h2 className="mb-3 text-lg font-semibold">5-Day Forecast</h2>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                  {data.daily.map((d) => {
+                    const date = new Date(d.date + "T00:00:00");
+                    const day = date.toLocaleDateString(undefined, { weekday: "short" });
+                    const md = date.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    });
+
+                    return (
+                      <div
+                        key={d.date}
+                        className="rounded-lg border bg-card p-4 text-card-foreground"
+                      >
+                        <div className="text-sm font-medium">{day}</div>
+                        <div className="text-xs text-muted-foreground">{md}</div>
+
+                        <div className="my-3 flex justify-center">
+                          {iconFor(d.code, 1, 36)}
+                        </div>
+
+                        <div className="text-center text-sm">
+                          <span className="font-semibold">{formatTemp(d.tMax)}°</span>
+                          <span className="text-muted-foreground"> / {formatTemp(d.tMin)}°</span>
+                        </div>
+
+                        <div className="mt-2 text-center text-xs text-muted-foreground">
+                          {WMO[d.code] ?? "—"}
+                        </div>
+
+                        <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                          <span title="Precipitation">
+                            <Droplets size={12} className="inline" />{" "}
+                            {d.precip.toFixed(1)}"
+                          </span>
+                          <span title="Max wind">
+                            <Wind size={12} className="inline" /> {Math.round(d.windMax)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            </section>
+              </section>
+              
+              <p className="mt-6 text-xs text-muted-foreground">
+                Data from OpenStreetMap. No API key required.
+              </p>
+            </>
+          )}
+         </>
+        )}
 
-            {/* Extra: 5-day forecast section */}
-            <section className="mt-6">
-              <h2 className="mb-3 text-lg font-semibold">5-Day Forecast</h2>
+        {activeSection === "saved" && (
+          <section>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">Saved Weather Queries</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Save location and date range searches, then manage them with CRUD actions.
+              </p>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-                {data.daily.map((d) => {
-                  const date = new Date(d.date + "T00:00:00");
-                  const day = date.toLocaleDateString(undefined, { weekday: "short" });
-                  const md = date.toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  });
-
-                  return (
-                    <div
-                      key={d.date}
-                      className="rounded-lg border bg-card p-4 text-card-foreground"
-                    >
-                      <div className="text-sm font-medium">{day}</div>
-                      <div className="text-xs text-muted-foreground">{md}</div>
-
-                      <div className="my-3 flex justify-center">
-                        {iconFor(d.code, 1, 36)}
-                      </div>
-
-                      <div className="text-center text-sm">
-                        <span className="font-semibold">{formatTemp(d.tMax)}°</span>
-                        <span className="text-muted-foreground"> / {formatTemp(d.tMin)}°</span>
-                      </div>
-
-                      <div className="mt-2 text-center text-xs text-muted-foreground">
-                        {WMO[d.code] ?? "—"}
-                      </div>
-
-                      <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                        <span title="Precipitation">
-                          <Droplets size={12} className="inline" />{" "}
-                          {d.precip.toFixed(1)}"
-                        </span>
-                        <span title="Max wind">
-                          <Wind size={12} className="inline" /> {Math.round(d.windMax)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-            
-            <p className="mt-6 text-xs text-muted-foreground">
-              Data from OpenStreetMap. No API key required.
-            </p>
-
-            <section className="mt-10 border-t pt-8">
-              <div className="mb-4">
-                <h2 className="text-xl font-semibold">Saved Weather Queries</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Save location and date range searches, then manage them with CRUD actions.
-                </p>
-              </div>
-
-              <SavedQueries />
-            </section>
-          </>
+            <SavedQueries />
+          </section>
         )}
       </div>
     </div>
