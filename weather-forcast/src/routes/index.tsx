@@ -101,6 +101,45 @@ async function geocode(query: string): Promise<GeoResult> {
   };
 }
 
+async function fetchRangeTemperatures(
+  lat: number,
+  lon: number,
+  startISO: string,
+  endISO: string
+): Promise<SavedQuery["temperatures"]> {
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const endpoint =
+    endISO < todayISO
+      ? "https://archive-api.open-meteo.com/v1/archive"
+      : "https://api.open-meteo.com/v1/forecast";
+
+  const url =
+    `${endpoint}?latitude=${lat}&longitude=${lon}` +
+    `&start_date=${startISO}&end_date=${endISO}` +
+    `&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean` +
+    `&timezone=auto&temperature_unit=fahrenheit`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error("Could not fetch temperatures for that date range.");
+  }
+
+  const json = await res.json();
+
+  if (!json.daily?.time) {
+    throw new Error("No temperature data found for that range.");
+  }
+
+  return json.daily.time.map((date: string, i: number) => ({
+    date,
+    tMax: json.daily.temperature_2m_max?.[i] ?? null,
+    tMin: json.daily.temperature_2m_min?.[i] ?? null,
+    tMean: json.daily.temperature_2m_mean?.[i] ?? null,
+  }));
+}
+
 async function fetchWeather(
   lat: number,
   lon: number,
