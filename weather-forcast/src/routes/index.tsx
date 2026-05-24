@@ -272,6 +272,68 @@ function WeatherPage() {
   const error = mutation.error || geoMutation.error;
   const loading = mutation.isPending || geoMutation.isPending;
 
+  function download(filename: string, mime: string, content: string) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+  
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+  
+    URL.revokeObjectURL(url);
+  }
+  
+  function toCSV(rows: SavedQuery[]): string {
+    const header = [
+      "id",
+      "location_query",
+      "resolved_name",
+      "latitude",
+      "longitude",
+      "start_date",
+      "end_date",
+      "notes",
+      "created_at",
+    ];
+  
+    const escapeValue = (value: unknown) =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+  
+    return [
+      header.join(","),
+      ...rows.map((row) =>
+        header.map((key) => escapeValue(row[key as keyof SavedQuery])).join(",")
+      ),
+    ].join("\n");
+  }
+  
+  function toMarkdown(rows: SavedQuery[]): string {
+    let output = `# Weather Queries (${rows.length})\n\n`;
+  
+    for (const row of rows) {
+      output += `## ${row.resolved_name}\n`;
+      output += `- Query: ${row.location_query}\n`;
+      output += `- Coordinates: ${row.latitude}, ${row.longitude}\n`;
+      output += `- Date range: ${row.start_date} to ${row.end_date}\n`;
+  
+      if (row.notes) {
+        output += `- Notes: ${row.notes}\n`;
+      }
+  
+      output += `\n| Date | Min °F | Max °F | Mean °F |\n`;
+      output += `|---|---:|---:|---:|\n`;
+  
+      for (const temp of row.temperatures) {
+        output += `| ${temp.date} | ${temp.tMin ?? "-"} | ${temp.tMax ?? "-"} | ${temp.tMean ?? "-"} |\n`;
+      }
+  
+      output += `\n`;
+    }
+  
+    return output;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-4xl px-4 py-10">
