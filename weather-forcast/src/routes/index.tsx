@@ -551,7 +551,11 @@ function SavedQueries() {
     },
   });
   const [showForm, setShowForm] = useState(false);
+  const queryClient = useQueryClient();
 
+  const refreshSavedQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ["weather_queries"] });
+  };
   if (isLoading) {
     return (
       <div className="rounded-lg border p-6 text-sm text-muted-foreground">
@@ -591,7 +595,10 @@ function SavedQueries() {
         <QueryForm
           initial={null}
           onClose={() => setShowForm(false)}
-          onSaved={() => setShowForm(false)}
+          onSaved={() => {
+            setShowForm(false);
+            refreshSavedQueries();
+          }}
         />
       )}
   
@@ -672,6 +679,58 @@ function QueryForm({
   const [start, setStart] = useState(initial?.start_date ?? today);
   const [end, setEnd] = useState(initial?.end_date ?? in7Days);
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!location.trim()) {
+        throw new Error("Location is required.");
+      }
+  
+      if (!start || !end) {
+        throw new Error("Start and end dates are required.");
+      }
+  
+      if (start > end) {
+        throw new Error("End date must be on or after start date.");
+      }
+  
+      const daysApart =
+        (new Date(end).getTime() - new Date(start).getTime()) / 86400000;
+  
+      if (daysApart > 366) {
+        throw new Error("Date range cannot exceed 366 days.");
+      }
+  
+      const geo = await geocode(location);
+      const resolvedName = [geo.name, geo.admin1, geo.country]
+        .filter(Boolean)
+        .join(", ");
+  
+      const temperatures = await fetchRangeTemperatures(
+        geo.latitude,
+        geo.longitude,
+        start,
+        end
+      );
+  
+      const payload = {
+        location_query: location.trim(),
+        resolved_name: resolvedName,
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+        start_date: start,
+        end_date: end,
+        notes: notes.trim() || null,
+        temperatures,
+      };
+  
+      const { error } = await supabase.from("weather_queries").insert(payload);
+  
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: onSaved,
+  });
 
   return (
     <div className="mb-4 rounded-lg border bg-card p-4">
@@ -735,10 +794,18 @@ function QueryForm({
           Cancel
         </button>
 
+        {saveMutation.error && (
+          <div className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
+            {(saveMutation.error as Error).message}
+          </div>
+        )}
+        
         <button
-          onClick={onSaved}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+          onClick={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
+          {saveMutation.isPending && <Loader2 className="animate-spin" size={14} />}
           Save
         </button>
       </div>
