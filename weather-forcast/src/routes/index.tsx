@@ -598,6 +598,32 @@ function SavedQueries() {
               "{row.notes}"
             </div>
           )}
+
+          {row.temperatures.length > 0 && (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[400px] text-xs">
+                <thead>
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-1 pr-3">Date</th>
+                    <th className="py-1 pr-3">Min °F</th>
+                    <th className="py-1 pr-3">Max °F</th>
+                    <th className="py-1 pr-3">Mean °F</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {row.temperatures.map((temp) => (
+                    <tr key={temp.date} className="border-t">
+                      <td className="py-1 pr-3">{temp.date}</td>
+                      <td className="py-1 pr-3">{temp.tMin ?? "—"}</td>
+                      <td className="py-1 pr-3">{temp.tMax ?? "—"}</td>
+                      <td className="py-1 pr-3">{temp.tMean ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ))}
     </div>
