@@ -588,6 +588,20 @@ function SavedQueries() {
   const refreshSavedQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["weather_queries"] });
   };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("weather_queries")
+        .delete()
+        .eq("id", id);
+  
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: refreshSavedQueries,
+  });
+  
   if (isLoading) {
     return (
       <div className="rounded-lg border p-6 text-sm text-muted-foreground">
@@ -680,6 +694,17 @@ function SavedQueries() {
                   </table>
                 </div>
               )}
+              <button
+                onClick={() => {
+                  if (confirm("Delete this saved query?")) {
+                    deleteMutation.mutate(row.id);
+                  }
+                }}
+                className="mt-3 inline-flex items-center gap-1 rounded-md border border-destructive/50 px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 size={12} />
+                Delete
+              </button>
             </div>
           ))}
         </div>
