@@ -694,26 +694,48 @@ function SavedQueries() {
         <div className="space-y-3">
           {rows.map((row) => (
             <div key={row.id} className="rounded-lg border bg-card p-4 text-card-foreground">
-              <div className="flex items-center gap-2 font-semibold">
-                <MapPin size={14} />
-                {row.resolved_name}
-              </div>
-
-              <div className="mt-1 text-xs text-muted-foreground">
-                Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
-                {row.longitude.toFixed(3)}
-              </div>
-
-              <div className="mt-2 text-sm">
-                {row.start_date} to {row.end_date} · {row.temperatures.length} day(s)
-              </div>
-
-              {row.notes && (
-                <div className="mt-1 text-sm italic text-muted-foreground">
-                  "{row.notes}"
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 font-semibold">
+                    <MapPin size={14} />
+                    {row.resolved_name}
+                  </div>
+            
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
+                    {row.longitude.toFixed(3)}
+                  </div>
+            
+                  <div className="mt-2 text-sm">
+                    {row.start_date} → {row.end_date} · {row.temperatures.length} day(s)
+                  </div>
                 </div>
-              )}
-
+            
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(row);
+                      setShowForm(true);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+                  >
+                    <Pencil size={12} />
+                    Edit
+                  </button>
+            
+                  <button
+                    onClick={() => {
+                      if (confirm("Delete this saved query?")) {
+                        deleteMutation.mutate(row.id);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md border border-destructive/50 px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 size={12} />
+                    Delete
+                  </button>
+                </div>
+              </div>
               {row.temperatures.length > 0 && (
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full min-w-[400px] text-xs">
@@ -739,27 +761,6 @@ function SavedQueries() {
                   </table>
                 </div>
               )}
-              <button
-                onClick={() => {
-                  if (confirm("Delete this saved query?")) {
-                    deleteMutation.mutate(row.id);
-                  }
-                }}
-                className="mt-3 inline-flex items-center gap-1 rounded-md border border-destructive/50 px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 size={12} />
-                Delete
-              </button>
-              <button
-                onClick={() => {
-                  setEditing(row);
-                  setShowForm(true);
-                }}
-                className="mt-3 mr-2 inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
-              >
-                <Pencil size={12} />
-                Edit
-              </button>
             </div>
           ))}
         </div>
