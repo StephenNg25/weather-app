@@ -742,7 +742,7 @@ function QueryForm({
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const in7Days = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-
+  const isEdit = !!initial;
   const [location, setLocation] = useState(initial?.location_query ?? "");
   const [start, setStart] = useState(initial?.start_date ?? today);
   const [end, setEnd] = useState(initial?.end_date ?? in7Days);
@@ -791,10 +791,21 @@ function QueryForm({
         temperatures,
       };
   
-      const { error } = await supabase.from("weather_queries").insert(payload);
-  
-      if (error) {
-        throw new Error(error.message);
+      if (isEdit && initial) {
+        const { error } = await supabase
+          .from("weather_queries")
+          .update(payload)
+          .eq("id", initial.id);
+      
+        if (error) {
+          throw new Error(error.message);
+        }
+      } else {
+        const { error } = await supabase.from("weather_queries").insert(payload);
+      
+        if (error) {
+          throw new Error(error.message);
+        }
       }
     },
     onSuccess: onSaved,
@@ -803,7 +814,9 @@ function QueryForm({
   return (
     <div className="mb-4 rounded-lg border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">New weather query</h3>
+      <h3 className="font-semibold">
+        {isEdit ? "Edit weather query" : "New weather query"}
+      </h3>
 
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <X size={16} />
@@ -874,7 +887,7 @@ function QueryForm({
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {saveMutation.isPending && <Loader2 className="animate-spin" size={14} />}
-          Save
+          {isEdit ? "Update" : "Save"}
         </button>
       </div>
     </div>
