@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning, CloudFog, 
-  CloudDrizzle, Wind, Droplets, Gauge, Thermometer, Loader2, MapPin, Search 
+  CloudDrizzle, Wind, Droplets, Gauge, Thermometer, Loader2, MapPin, Search,
+  Save, Trash2, Pencil, Download, Map as MapIcon, X 
 } from "lucide-react";
 
 
@@ -17,6 +19,20 @@ type WeatherData = {
   location: string;
   current: { temp: number; feels: number; humidity: number; wind: number; pressure: number; code: number; isDay: number;};
   daily: Array<{ date: string; tMax: number; tMin: number; code: number; precip: number; windMax: number }>;
+};
+
+type SavedQuery = {
+  id: string;
+  location_query: string;
+  resolved_name: string;
+  latitude: number;
+  longitude: number;
+  start_date: string;
+  end_date: string;
+  notes: string | null;
+  temperatures: Array<{date: string; tMax: number; tMin: number; tMean?: number;}>;
+  created_at: string;
+  updated_at: string;
 };
 
 const WMO: Record<number, string> = {
