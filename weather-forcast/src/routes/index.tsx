@@ -621,7 +621,7 @@ function SavedQueries() {
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           onClick={() => {
             setEditing(null);
@@ -632,6 +632,43 @@ function SavedQueries() {
           <Save size={14} />
           New query
         </button>
+
+        <div className="ml-auto flex gap-2">
+          <button
+            disabled={!rows.length}
+            onClick={() =>
+              download(
+                "weather_queries.json",
+                "application/json",
+                JSON.stringify(rows, null, 2)
+              )
+            }
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent disabled:opacity-40"
+          >
+            <Download size={12} />
+            JSON
+          </button>
+
+          <button
+            disabled={!rows.length}
+            onClick={() => download("weather_queries.csv", "text/csv", toCSV(rows))}
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent disabled:opacity-40"
+          >
+            <Download size={12} />
+            CSV
+          </button>
+
+          <button
+            disabled={!rows.length}
+            onClick={() =>
+              download("weather_queries.md", "text/markdown", toMarkdown(rows))
+            }
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent disabled:opacity-40"
+          >
+            <Download size={12} />
+            Markdown
+          </button>
+        </div>
       </div>
   
       {showForm && (
