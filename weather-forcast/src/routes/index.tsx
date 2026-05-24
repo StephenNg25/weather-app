@@ -572,13 +572,6 @@ function SavedQueries() {
     );
   }
 
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-        No saved queries yet.
-      </div>
-    );
-  }
   return (
     <div>
       <div className="mb-4">
