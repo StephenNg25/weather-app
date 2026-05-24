@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning, CloudFog, 
   CloudDrizzle, Wind, Droplets, Gauge, Thermometer, Loader2, MapPin, Search,
-  Save, Trash2, Pencil, Download, Map as MapIcon, X 
+  Save, Trash2, Pencil, Download, Map as MapIcon, Play, X 
 } from "lucide-react";
 
 
@@ -761,6 +761,11 @@ function SavedQueries() {
                   </table>
                 </div>
               )}
+              <ExploreLocation
+                lat={row.latitude}
+                lon={row.longitude}
+                label={row.resolved_name}
+              />
             </div>
           ))}
         </div>
@@ -929,6 +934,68 @@ function QueryForm({
         </button>
       </div>
     </div>
+  );
+}
+
+function ExploreLocation({
+  lat,
+  lon,
+  label,
+}: {
+  lat: number;
+  lon: number;
+  label: string;
+}) {
+  const mapsEmbed = `https://maps.google.com/maps?q=${lat},${lon}&z=11&output=embed`;
+  const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+  const youtubeLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    label + " travel"
+  )}`;
+
+  return (
+    <section className="mt-3">
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="overflow-hidden rounded-lg border">
+          <iframe
+            title={`Map of ${label}`}
+            src={mapsEmbed}
+            className="h-48 w-full"
+            loading="lazy"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 text-sm">
+          <a
+            href={youtubeLink}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-accent"
+          >
+            <Play size={16} className="text-destructive" />
+            YouTube videos of {label}
+          </a>
+
+          <a
+            href={mapsLink}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-accent"
+          >
+            <MapIcon size={16} />
+            Open in Google Maps
+          </a>
+
+          <a
+            href={`https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(label)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-accent"
+          >
+            📖 Wikipedia
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }
 
