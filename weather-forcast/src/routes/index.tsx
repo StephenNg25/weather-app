@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning, CloudFog, 
@@ -610,6 +610,7 @@ function SavedQueries() {
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<SavedQuery | null>(null);
+  const editFormRef = useRef<HTMLDivElement | null>(null);
 
   const refreshSavedQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["weather_queries"] });
@@ -627,6 +628,18 @@ function SavedQueries() {
     },
     onSuccess: refreshSavedQueries,
   });
+
+  function openEditForm(row: SavedQuery) {
+    setEditing(row);
+    setShowForm(true);
+  
+    setTimeout(() => {
+      editFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 0);
+  }
 
   if (isLoading) {
     return (
@@ -696,9 +709,9 @@ function SavedQueries() {
         </div>
       </div>
   
-      {showForm && (
+      {showForm && !editing && (
         <QueryForm
-          initial={editing}
+          initial={null}
           onClose={() => {
             setShowForm(false);
             setEditing(null);
@@ -718,18 +731,34 @@ function SavedQueries() {
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (
-            <SavedQueryCard
-              row={row}
-              onEdit={() => {
-                setEditing(row);
-                setShowForm(true);
-              }}
-              onDelete={() => {
-                if (confirm("Delete this saved query?")) {
-                  deleteMutation.mutate(row.id);
-                }
-              }}
-            />
+            <div key={row.id}>
+              {showForm && editing?.id === row.id && (
+                <div ref={editFormRef} className="mb-3">
+                  <QueryForm
+                    initial={editing}
+                    onClose={() => {
+                      setShowForm(false);
+                      setEditing(null);
+                    }}
+                    onSaved={() => {
+                      setShowForm(false);
+                      setEditing(null);
+                      refreshSavedQueries();
+                    }}
+                  />
+                </div>
+              )}
+
+              <SavedQueryCard
+                row={row}
+                onEdit={() => openEditForm(row)}
+                onDelete={() => {
+                  if (confirm("Delete this saved query?")) {
+                    deleteMutation.mutate(row.id);
+                  }
+                }}
+              />
+            </div>
           ))}
         </div>
       )}
