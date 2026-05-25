@@ -205,6 +205,12 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
 function fahrenheitToCelsius(f: number) {
   return ((f - 32) * 5) / 9;
 }
+function formatSavedTemp(value: number | null | undefined, unit: "F" | "C") {
+  if (value === null || value === undefined) return "—";
+
+  const converted = unit === "C" ? fahrenheitToCelsius(value) : value;
+  return `${Math.round(converted)}°${unit}`;
+}
 function download(filename: string, mime: string, content: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -693,83 +699,124 @@ function SavedQueries() {
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (
-            <div key={row.id} className="rounded-lg border bg-card p-4 text-card-foreground">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 font-semibold">
-                    <MapPin size={14} />
-                    {row.resolved_name}
-                  </div>
-            
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
-                    {row.longitude.toFixed(3)}
-                  </div>
-            
-                  <div className="mt-2 text-sm">
-                    {row.start_date} → {row.end_date} · {row.temperatures.length} day(s)
-                  </div>
-                </div>
-            
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setEditing(row);
-                      setShowForm(true);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
-                  >
-                    <Pencil size={12} />
-                    Edit
-                  </button>
-            
-                  <button
-                    onClick={() => {
-                      if (confirm("Delete this saved query?")) {
-                        deleteMutation.mutate(row.id);
-                      }
-                    }}
-                    className="inline-flex items-center gap-1 rounded-md border border-destructive/50 px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 size={12} />
-                    Delete
-                  </button>
-                </div>
-              </div>
-              {row.temperatures.length > 0 && (
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[400px] text-xs">
-                    <thead>
-                      <tr className="text-left text-muted-foreground">
-                        <th className="py-1 pr-3">Date</th>
-                        <th className="py-1 pr-3">Min °F</th>
-                        <th className="py-1 pr-3">Max °F</th>
-                        <th className="py-1 pr-3">Mean °F</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {row.temperatures.map((temp) => (
-                        <tr key={temp.date} className="border-t">
-                          <td className="py-1 pr-3">{temp.date}</td>
-                          <td className="py-1 pr-3">{temp.tMin ?? "—"}</td>
-                          <td className="py-1 pr-3">{temp.tMax ?? "—"}</td>
-                          <td className="py-1 pr-3">{temp.tMean ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <ExploreLocation
-                lat={row.latitude}
-                lon={row.longitude}
-                label={row.resolved_name}
-              />
-            </div>
+            <SavedQueryCard
+              row={row}
+              onEdit={() => {
+                setEditing(row);
+                setShowForm(true);
+              }}
+              onDelete={() => {
+                if (confirm("Delete this saved query?")) {
+                  deleteMutation.mutate(row.id);
+                }
+              }}
+            />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SavedQueryCard({
+  row,
+  onEdit,
+  onDelete,
+}: {
+  row: SavedQuery;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [unit, setUnit] = useState<"F" | "C">("F");
+
+  return (
+    <div className="rounded-lg border bg-card p-4 text-card-foreground">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 font-semibold">
+            <MapPin size={14} />
+            {row.resolved_name}
+          </div>
+
+          <div className="mt-1 text-xs text-muted-foreground">
+            Searched as "{row.location_query}" · {row.latitude.toFixed(3)},{" "}
+            {row.longitude.toFixed(3)}
+          </div>
+
+          <div className="mt-2 text-sm">
+            {row.start_date} → {row.end_date} · {row.temperatures.length} day(s)
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => setUnit((prev) => (prev === "F" ? "C" : "F"))}
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+          >
+            Show °{unit === "F" ? "C" : "F"}
+          </button>
+
+          <button
+            onClick={onEdit}
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs hover:bg-accent"
+          >
+            <Pencil size={12} />
+            Edit
+          </button>
+
+          <button
+            onClick={onDelete}
+            className="inline-flex items-center gap-1 rounded-md border border-destructive/50 px-2.5 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 size={12} />
+            Delete
+          </button>
+        </div>
+      </div>
+
+      {row.notes && (
+        <div className="mt-1 text-sm italic text-muted-foreground">
+          "{row.notes}"
+        </div>
+      )}
+
+      {row.temperatures.length > 0 && (
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[400px] text-xs">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="py-1 pr-3">Date</th>
+                <th className="py-1 pr-3">Min °{unit}</th>
+                <th className="py-1 pr-3">Max °{unit}</th>
+                <th className="py-1 pr-3">Mean °{unit}</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {row.temperatures.map((temp) => (
+                <tr key={temp.date} className="border-t">
+                  <td className="py-1 pr-3">{temp.date}</td>
+                  <td className="py-1 pr-3">
+                    {formatSavedTemp(temp.tMin, unit)}
+                  </td>
+                  <td className="py-1 pr-3">
+                    {formatSavedTemp(temp.tMax, unit)}
+                  </td>
+                  <td className="py-1 pr-3">
+                    {formatSavedTemp(temp.tMean, unit)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <ExploreLocation
+        lat={row.latitude}
+        lon={row.longitude}
+        label={row.resolved_name}
+      />
     </div>
   );
 }
