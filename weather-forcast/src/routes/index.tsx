@@ -30,7 +30,17 @@ type SavedQuery = {
   start_date: string;
   end_date: string;
   notes: string | null;
-  temperatures: Array<{date: string; tMax: number; tMin: number; tMean?: number;}>;
+  temperatures: Array<{
+    date: string;
+    code?: number | null;
+    condition?: string | null;
+    tMax: number | null;
+    tMin: number | null;
+    tMean?: number | null;
+    feelsLike?: number | null;
+    precipitation?: number | null;
+    windMax?: number | null;
+  }>;
   created_at: string;
   updated_at: string;
 };
@@ -117,7 +127,7 @@ async function fetchRangeTemperatures(
   const url =
     `${endpoint}?latitude=${lat}&longitude=${lon}` +
     `&start_date=${startISO}&end_date=${endISO}` +
-    `&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,apparent_temperature_max,precipitation_sum,wind_speed_10m_max` +
     `&timezone=auto&temperature_unit=fahrenheit`;
 
   const res = await fetch(url);
@@ -132,12 +142,21 @@ async function fetchRangeTemperatures(
     throw new Error("No temperature data found for that range.");
   }
 
-  return json.daily.time.map((date: string, i: number) => ({
-    date,
-    tMax: json.daily.temperature_2m_max?.[i] ?? null,
-    tMin: json.daily.temperature_2m_min?.[i] ?? null,
-    tMean: json.daily.temperature_2m_mean?.[i] ?? null,
-  }));
+  return json.daily.time.map((date: string, i: number) => {
+    const code = json.daily.weather_code?.[i] ?? null;
+  
+    return {
+      date,
+      code,
+      condition: code !== null ? WMO[code] ?? "Unknown" : null,
+      tMax: json.daily.temperature_2m_max?.[i] ?? null,
+      tMin: json.daily.temperature_2m_min?.[i] ?? null,
+      tMean: json.daily.temperature_2m_mean?.[i] ?? null,
+      feelsLike: json.daily.apparent_temperature_max?.[i] ?? null,
+      precipitation: json.daily.precipitation_sum?.[i] ?? null,
+      windMax: json.daily.wind_speed_10m_max?.[i] ?? null,
+    };
+  });
 }
 
 async function fetchWeather(
@@ -786,9 +805,11 @@ function SavedQueryCard({
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="py-1 pr-3">Date</th>
-                <th className="py-1 pr-3">Min °{unit}</th>
-                <th className="py-1 pr-3">Max °{unit}</th>
-                <th className="py-1 pr-3">Mean °{unit}</th>
+                <th className="py-1 pr-3">Condition</th>
+                <th className="py-1 pr-3">Min/Max</th>
+                <th className="py-1 pr-3">Feels Like</th>
+                <th className="py-1 pr-3">Precip.</th>
+                <th className="py-1 pr-3">Wind</th>
               </tr>
             </thead>
 
@@ -796,14 +817,30 @@ function SavedQueryCard({
               {row.temperatures.map((temp) => (
                 <tr key={temp.date} className="border-t">
                   <td className="py-1 pr-3">{temp.date}</td>
+                
                   <td className="py-1 pr-3">
-                    {formatSavedTemp(temp.tMin, unit)}
+                    {temp.condition ??
+                      (temp.code !== null && temp.code !== undefined ? WMO[temp.code] : "—")}
                   </td>
+                
                   <td className="py-1 pr-3">
-                    {formatSavedTemp(temp.tMax, unit)}
+                    {formatSavedTemp(temp.tMin, unit)} / {formatSavedTemp(temp.tMax, unit)}
                   </td>
+                
                   <td className="py-1 pr-3">
-                    {formatSavedTemp(temp.tMean, unit)}
+                    {formatSavedTemp(temp.feelsLike ?? temp.tMean, unit)}
+                  </td>
+                
+                  <td className="py-1 pr-3">
+                    {temp.precipitation !== null && temp.precipitation !== undefined
+                      ? `${temp.precipitation.toFixed(1)} mm`
+                      : "—"}
+                  </td>
+                
+                  <td className="py-1 pr-3">
+                    {temp.windMax !== null && temp.windMax !== undefined
+                      ? `${Math.round(temp.windMax)} mph`
+                      : "—"}
                   </td>
                 </tr>
               ))}
