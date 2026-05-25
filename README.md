@@ -1,7 +1,8 @@
 # Weather Forecast App Technical Assessment
 
 This project is a full-stack weather application built for the PM Accelerator technical assessment. The app allows users to search for real-time weather information, view a 5-day forecast, save weather queries with custom date ranges, manage saved records with CRUD operations, and export saved data.
-
+![Current Weather](https://github.com/StephenNg25/weather-app/blob/f36c2f3b685b3abb9e6429bf87a010d5c15cc313/WF1.png)
+![Saved Queries](https://github.com/StephenNg25/weather-app/blob/f36c2f3b685b3abb9e6429bf87a010d5c15cc313/WF2.png)
 ## What I Built
 I built a weather app that supports:
 
